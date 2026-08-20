@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Primus, Live — a ledger</title>
+<meta name="description" content="Every Primus album track, lit up if I've heard it live.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #ece2cd;
+    --ink-dim: #6f6353;
+    --bg: #14100c;
+    --card: #1e1811;
+    --card-edge: #322a1e;
+    --swamp: #a3c130;
+    --swamp-deep: #5c7a1a;
+    --rust: #d08c2e;
+    --row-lit: rgba(163, 193, 48, 0.09);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(163, 193, 48, 0.07), transparent),
+      repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.25) 2px 4px);
+    color: var(--ink);
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-size: 18px;
+    line-height: 1.4;
+    padding: 3rem 1.25rem 4rem;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 3rem; }
+
+  h1 {
+    font-family: "Alfa Slab One", "Georgia", serif;
+    font-size: clamp(2.6rem, 8vw, 5.2rem);
+    line-height: 0.95;
+    color: var(--swamp);
+    text-shadow: 4px 4px 0 #000, 5px 5px 0 var(--swamp-deep);
+    letter-spacing: 0.02em;
+    transform: rotate(-1.5deg);
+  }
+
+  h1 .sucks { color: var(--rust); }
+
+  .strap {
+    margin-top: 1rem;
+    font-size: 1.25rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .stats {
+    margin: 1.75rem auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .stat {
+    border: 1px solid var(--card-edge);
+    background: var(--card);
+    padding: 0.5rem 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+  }
+
+  .stat b { color: var(--swamp); font-size: 1.2rem; margin-right: 0.35rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .album {
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.45);
+    position: relative;
+  }
+
+  .album.full { border-color: var(--swamp-deep); }
+
+  .ribbon {
+    position: absolute;
+    top: 14px;
+    right: -8px;
+    background: var(--swamp);
+    color: #14100c;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.8rem;
+    padding: 0.25rem 0.7rem;
+    box-shadow: 3px 3px 0 rgba(0,0,0,0.5);
+    transform: rotate(2deg);
+    z-index: 2;
+  }
+
+  .album-head { display: flex; gap: 1rem; padding: 1rem 1rem 0.75rem; align-items: center; }
+
+  .cover {
+    width: 92px; height: 92px;
+    flex: none;
+    object-fit: cover;
+    border: 2px solid var(--card-edge);
+    background: #000;
+    filter: saturate(0.9);
+  }
+
+  .cover-fallback {
+    width: 92px; height: 92px;
+    flex: none;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--card-edge);
+    background: repeating-linear-gradient(45deg, #221b12 0 8px, #191410 8px 16px);
+    font-family: "Alfa Slab One", serif;
+    font-size: 2rem;
+    color: var(--rust);
+  }
+
+  .album-title { font-family: "Alfa Slab One", serif; font-size: 1.25rem; line-height: 1.1; color: var(--ink); }
+  .album-year { color: var(--ink-dim); font-weight: 600; letter-spacing: 0.12em; margin-top: 0.2rem; }
+
+  .meter { margin: 0 1rem 0.4rem; }
+  .meter-label {
+    display: flex; justify-content: space-between;
+    font-weight: 700; font-size: 0.95rem;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-dim);
+    margin-bottom: 0.3rem;
+  }
+  .meter-label .n { color: var(--swamp); }
+  .meter-bar { height: 8px; background: #0d0a07; border: 1px solid var(--card-edge); }
+  .meter-fill { height: 100%; background: linear-gradient(90deg, var(--swamp-deep), var(--swamp)); }
+
+  .tracks { list-style: none; padding: 0.5rem 0 0.75rem; }
+
+  .track {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.16rem 1rem;
+    font-size: 1.05rem;
+    color: var(--ink-dim);
+  }
+
+  .track.heard { color: var(--ink); background: var(--row-lit); font-weight: 600; }
+
+  .track .no {
+    flex: none; width: 1.4rem;
+    text-align: right;
+    font-weight: 400;
+    color: var(--ink-dim);
+    font-size: 0.9rem;
+  }
+  .track.heard .no { color: var(--swamp-deep); }
+
+  .track .t { flex: 1; }
+  .track:not(.heard) .t { text-decoration: line-through; text-decoration-color: rgba(111, 99, 83, 0.45); text-decoration-thickness: 1px; }
+
+  .tally { flex: none; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.05em; color: var(--swamp); }
+  .tally.max { color: var(--rust); }
+
+  section.others { margin-top: 3rem; }
+
+  .others h2, .gigs h2 {
+    font-family: "Alfa Slab One", serif;
+    font-size: 1.5rem;
+    color: var(--rust);
+    transform: rotate(-0.5deg);
+    margin-bottom: 0.75rem;
+  }
+
+  .others ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.6rem; }
+
+  .others li {
+    border: 1px dashed var(--card-edge);
+    background: var(--card);
+    padding: 0.45rem 0.9rem;
+    font-weight: 600;
+  }
+
+  .others li small { color: var(--ink-dim); font-weight: 400; margin-left: 0.4rem; }
+
+  footer {
+    margin-top: 3.5rem;
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 0.95rem;
+    letter-spacing: 0.05em;
+  }
+
+  footer a { color: var(--swamp); }
+
+  @media (hover: hover) {
+    .album { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .album:hover { transform: translate(-2px, -2px); box-shadow: 9px 9px 0 rgba(0,0,0,0.5); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .album, .album:hover { transition: none; transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>PRIMUS <span class="sucks">SUCKS</span></h1>
+    <p class="strap">Every album track &middot; lit up when I've heard it live</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <main class="grid" id="albums"></main>
+
+  <section class="others">
+    <h2>Heard from a Primus stage, but not Primus</h2>
+    <ul id="others"></ul>
+  </section>
+
+  <footer>
+    <p>Tracklists verified against Wikipedia. &ldquo;Primus sucks&rdquo; is a compliment.</p>
+  </footer>
+</div>
+
+<script>
+  const ALBUMS = [
+    {
+      title: "Frizzle Fry", year: 1990, img: "Primus-Frizzle_Fry.jpg",
+      tracks: [
+        ["To Defy the Laws of Tradition", 1],
+        ["Groundhog's Day", 1],
+        ["Too Many Puppies", 2],
+        ["Mr. Knowitall", 0],
+        ["Frizzle Fry", 2],
+        ["John the Fisherman", 3],
+        ["You Can't Kill Michael Malloy", 0],
+        ["The Toys Go Winding Down", 0],
+        ["Pudding Time", 1],
+        ["Sathington Willoughby", 0],
+        ["Spegetti Western", 0],
+        ["Harold of the Rocks", 2],
+        ["To Defy", 0],
+      ],
+    },
+    {
+      title: "Sailing the Seas of Cheese", year: 1991, img: "1991_Sailing_the_Seas_of_Cheese.jpg", full: true,
+      tracks: [
+        ["Seas of Cheese", 2],
+        ["Here Come the Bastards", 1],
+        ["Sgt. Baker", 1],
+        ["American Life", 3],
+        ["Jerry Was a Race Car Driver", 4],
+        ["Eleven", 2],
+        ["Is It Luck?", 1],
+        ["Grandad's Little Ditty", 1],
+        ["Tommy the Cat", 1],
+        ["Sathington Waltz", 1],
+        ["Those Damned Blue-Collar Tweekers", 1],
+        ["Fish On (Fisherman Chronicles, Chapter II)", 1],
+        ["Los Bastardos", 1],
+      ],
+    },
+    {
+      title: "Pork Soda", year: 1993, img: "Porksodacover.jpg",
+      tracks: [
+        ["Pork Chop's Little Ditty", 0],
+        ["My Name Is Mud", 3],
+        ["Welcome to This World", 1],
+        ["Bob", 0],
+        ["DMV", 0],
+        ["The Ol' Diamondback Sturgeon (Fisherman's Chronicles, Part 3)", 1],
+        ["Nature Boy", 0],
+        ["Wounded Knee", 0],
+        ["Pork Soda", 0],
+        ["The Pressman", 0],
+        ["Mr. Krinkle", 1],
+        ["The Air Is Getting Slippery", 0],
+        ["Hamburger Train", 0],
+        ["Pork Chop's Little Ditty (reprise)", 0],
+        ["Hail Santa", 0],
+      ],
+    },
+    {
+      title: "Tales from the Punchbowl", year: 1995, img: "Primus_Tales_From_the_Punchbowl.jpg",
+      tracks: [
+        ["Professor Nutbutter's House of Treats", 0],
+        ["Mrs. Blaileen", 0],
+        ["Wynona's Big Brown Beaver", 2],
+        ["Southbound Pachyderm", 2],
+        ["Space Farm", 0],
+        ["Year of the Parrot", 0],
+        ["Hellbound 17½ (Theme From)", 0],
+        ["Glass Sandwich", 0],
+        ["Del Davis Tree Farm", 0],
+        ["De Anza Jig", 0],
+        ["On the Tweek Again", 0],
+        ["Over the Electric Grapevine", 1],
+        ["Captain Shiner", 0],
+      ],
+    },
+    {
+      title: "Brown Album", year: 1997, img: "Brown_Album.jpg",
+      tracks: [
+        ["The Return of Sathington Willoughby", 0],
+        ["Fisticuffs", 1],
+        ["Golden Boy", 0],
+        ["Over the Falls", 2],
+        ["Shake Hands with Beef", 0],
+        ["Camelback Cinema", 0],
+        ["Hats Off", 0],
+        ["Puddin' Taine", 0],
+        ["Bob's Party Time Lounge", 1],
+        ["Duchess and the Proverbial Mind Spread", 2],
+        ["Restin' Bones", 1],
+        ["Coddingtown", 0],
+        ["Kalamazoo", 0],
+        ["The Chastising of Renegade", 0],
+        ["Arnie", 0],
+      ],
+    },
+    {
+      title: "Antipop", year: 1999, img: "Antipop.jpg",
+      tracks: [
+        ["Intro", 0],
+        ["Electric Uncle Sam", 0],
+        ["Natural Joe", 0],
+        ["Lacquer Head", 0],
+        ["The Antipop", 0],
+        ["Eclectic Electric", 0],
+        ["Greet the Sacred Cow", 0],
+        ["Mama Didn't Raise No Fool", 0],
+        ["Dirty Drowning Man", 0],
+        ["Ballad of Bodacious", 0],
+        ["Power Mad", 0],
+        ["The Final Voyage of the Liquid Sky", 0],
+        ["Coattails of a Dead Man", 0],
+      ],
+    },
+    {
+      title: "Green Naugahyde", year: 2011, img: "Primus_Green_Naugahyde.jpg", full: true,
+      tracks: [
+        ["Prelude to a Crawl", 2],
+        ["Hennepin Crawler", 1],
+        ["Last Salmon Man (Fisherman's Chronicles, Part IV)", 3],
+        ["Eternal Consumption Engine", 1],
+        ["Tragedy's a' Comin'", 3],
+        ["Eyes of the Squirrel", 3],
+        ["Jilly's on Smack", 4],
+        ["Lee Van Cleef", 3],
+        ["Moron TV", 2],
+        ["Green Ranger", 2],
+        ["HOINFODAMAN", 1],
+        ["Extinction Burst", 1],
+        ["Salmon Men", 1],
+      ],
+    },
+    {
+      title: "Primus & the Chocolate Factory with the Fungi Ensemble", year: 2014, img: "Primus_%26_The_Chocolate_Factory.jpg",
+      tracks: [
+        ["Hello Wonkites", 0],
+        ["Candy Man", 0],
+        ["Cheer Up Charlie", 0],
+        ["Golden Ticket", 0],
+        ["Lermaninoff", 0],
+        ["Pure Imagination", 0],
+        ["Oompa Augustus", 0],
+        ["Semi-Wondrous Boat Ride", 0],
+        ["Oompa Violet", 0],
+        ["I Want It Now", 0],
+        ["Oompa Veruca", 0],
+        ["Wonkmobile", 0],
+        ["Oompa TV", 0],
+        ["Farewell Wonkites", 0],
+      ],
+    },
+    {
+      title: "The Desaturating Seven", year: 2017, img: "TheDesaturatingSeven.jpg",
+      tracks: [
+        ["The Valley", 0],
+        ["The Seven", 0],
+        ["The Trek", 0],
+        ["The Scheme", 0],
+        ["The Dream", 0],
+        ["The Storm", 0],
+        ["The Ends?", 0],
+      ],
+    },
+    {
+      title: "Conspiranoid (EP)", year: 2022, img: "Primus_Conspiranoid_Cover.jpeg",
+      tracks: [
+        ["Conspiranoia", 0],
+        ["Follow the Fool", 0],
+        ["Erin on the Side of Caution", 0],
+      ],
+    },
+    {
+      title: "A Handful of Nuggs (EP)", year: 2026, img: null,
+      tracks: [
+        ["The Ol' Grizz", 1],
+        ["Holy Diver (feat. Puddles Pity Party)", 0],
+        ["Little Lord Fentanyl (feat. Puscifer)", 0],
+        ["Duchess (And the Proverbial Mind Spread) (live)", 2],
+      ],
+    },
+  ];
+
+  const OTHERS = [
+    ["Whamola", "Les Claypool's Frog Brigade", 1],
+    ["Drum and Whamola Jam", "improv", 1],
+    ["Hello Skinny", "The Residents cover", 1],
+    ["Voodoo Child (Slight Return)", "Jimi Hendrix Experience cover", 1],
+  ];
+
+  const GIGS = 4;
+
+  const wikiImg = (f) => `https://en.wikipedia.org/wiki/Special:FilePath/${f}?width=200`;
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+  const albumsEl = document.getElementById("albums");
+
+  let heardTracks = 0, totalTracks = 0;
+
+  ALBUMS.forEach((album) => {
+    const heard = album.tracks.filter(([, n]) => n > 0).length;
+    heardTracks += heard;
+    totalTracks += album.tracks.length;
+
+    const card = document.createElement("article");
+    card.className = "album" + (album.full ? " full" : "");
+
+    const initials = album.title.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+    const coverHtml = album.img
+      ? `<img class="cover" src="${wikiImg(album.img)}" alt="${esc(album.title)} cover"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="cover-fallback" aria-hidden="true">${esc(initials)}</div>`
+      : `<div class="cover-fallback" style="display:flex" aria-hidden="true">${esc(initials)}</div>`;
+
+    card.innerHTML = `
+      ${album.full ? '<div class="ribbon">Heard in full</div>' : ""}
+      <div class="album-head">
+        ${coverHtml}
+        <div>
+          <h2 class="album-title">${esc(album.title)}</h2>
+          <div class="album-year">${album.year}</div>
+        </div>
+      </div>
+      <div class="meter">
+        <div class="meter-label"><span>Heard live</span><span class="n">${heard} / ${album.tracks.length}</span></div>
+        <div class="meter-bar"><div class="meter-fill" style="width:${(heard / album.tracks.length) * 100}%"></div></div>
+      </div>
+      <ol class="tracks">
+        ${album.tracks.map(([t, n], i) => `
+          <li class="track${n > 0 ? " heard" : ""}">
+            <span class="no">${i + 1}</span>
+            <span class="t">${esc(t)}</span>
+            ${n > 0 ? `<span class="tally${n >= 4 ? " max" : ""}" title="heard ${n} time${n > 1 ? "s" : ""}">&times;${n}</span>` : ""}
+          </li>`).join("")}
+      </ol>`;
+
+    albumsEl.appendChild(card);
+  });
+
+  const othersEl = document.getElementById("others");
+  OTHERS.forEach(([t, src, n]) => {
+    const li = document.createElement("li");
+    li.innerHTML = `${esc(t)}<small>${esc(src)}${n > 1 ? ` &middot; &times;${n}` : ""}</small>`;
+    othersEl.appendChild(li);
+  });
+
+  const statsEl = document.getElementById("stats");
+  [
+    [GIGS, "gigs"],
+    [heardTracks, `of ${totalTracks} album tracks heard`],
+    [OTHERS.length, "covers & jams"],
+  ].forEach(([n, label]) => {
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.innerHTML = `<b>${n}</b>${label}`;
+    statsEl.appendChild(div);
+  });
+</script>
+</body>
+</html>
