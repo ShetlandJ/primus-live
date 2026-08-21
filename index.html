@@ -18,7 +18,9 @@
     --swamp: #a3c130;
     --swamp-deep: #5c7a1a;
     --rust: #d08c2e;
+    --rust-deep: #8a5a17;
     --row-lit: rgba(163, 193, 48, 0.09);
+    --row-tabbed: rgba(208, 140, 46, 0.10);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,8 +61,34 @@
     color: var(--ink-dim);
   }
 
+  .mode-toggle {
+    margin: 1.5rem auto 0;
+    display: inline-flex;
+    border: 1px solid var(--card-edge);
+    background: var(--card);
+    box-shadow: 4px 4px 0 rgba(0,0,0,0.45);
+  }
+
+  .mode-toggle button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    font: inherit;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 1rem;
+    padding: 0.6rem 1.4rem;
+    cursor: pointer;
+  }
+
+  .mode-toggle button:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+  .mode-toggle button[aria-pressed="true"].live-btn { background: var(--swamp); color: #14100c; }
+  .mode-toggle button[aria-pressed="true"].tabs-btn { background: var(--rust); color: #14100c; }
+
   .stats {
-    margin: 1.75rem auto 0;
+    margin: 1.25rem auto 0;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -78,7 +106,9 @@
     color: var(--ink);
   }
 
-  .stat b { color: var(--swamp); font-size: 1.2rem; margin-right: 0.35rem; }
+  .stat b { font-size: 1.2rem; margin-right: 0.35rem; }
+  body[data-mode="live"] .stat b { color: var(--swamp); }
+  body[data-mode="tabs"] .stat b { color: var(--rust); }
 
   .grid {
     display: grid;
@@ -94,7 +124,7 @@
     position: relative;
   }
 
-  .album.full { border-color: var(--swamp-deep); }
+  body[data-mode="live"] .album.full { border-color: var(--swamp-deep); }
 
   .ribbon {
     position: absolute;
@@ -111,6 +141,8 @@
     transform: rotate(2deg);
     z-index: 2;
   }
+
+  body[data-mode="tabs"] .ribbon { display: none; }
 
   .album-head { display: flex; gap: 1rem; padding: 1rem 1rem 0.75rem; align-items: center; }
 
@@ -147,9 +179,12 @@
     color: var(--ink-dim);
     margin-bottom: 0.3rem;
   }
-  .meter-label .n { color: var(--swamp); }
+  body[data-mode="live"] .meter-label .n { color: var(--swamp); }
+  body[data-mode="tabs"] .meter-label .n { color: var(--rust); }
   .meter-bar { height: 8px; background: #0d0a07; border: 1px solid var(--card-edge); }
-  .meter-fill { height: 100%; background: linear-gradient(90deg, var(--swamp-deep), var(--swamp)); }
+  .meter-fill { height: 100%; }
+  body[data-mode="live"] .meter-fill { background: linear-gradient(90deg, var(--swamp-deep), var(--swamp)); }
+  body[data-mode="tabs"] .meter-fill { background: linear-gradient(90deg, var(--rust-deep), var(--rust)); }
 
   .tracks { list-style: none; padding: 0.5rem 0 0.75rem; }
 
@@ -162,7 +197,9 @@
     color: var(--ink-dim);
   }
 
-  .track.heard { color: var(--ink); background: var(--row-lit); font-weight: 600; }
+  .track.on { color: var(--ink); font-weight: 600; }
+  body[data-mode="live"] .track.on { background: var(--row-lit); }
+  body[data-mode="tabs"] .track.on { background: var(--row-tabbed); }
 
   .track .no {
     flex: none; width: 1.4rem;
@@ -171,17 +208,25 @@
     color: var(--ink-dim);
     font-size: 0.9rem;
   }
-  .track.heard .no { color: var(--swamp-deep); }
+  body[data-mode="live"] .track.on .no { color: var(--swamp-deep); }
+  body[data-mode="tabs"] .track.on .no { color: var(--rust-deep); }
 
   .track .t { flex: 1; }
-  .track:not(.heard) .t { text-decoration: line-through; text-decoration-color: rgba(111, 99, 83, 0.45); text-decoration-thickness: 1px; }
+  .track:not(.on) .t { text-decoration: line-through; text-decoration-color: rgba(111, 99, 83, 0.45); text-decoration-thickness: 1px; }
+
+  .track a { color: var(--rust); text-decoration: none; border-bottom: 1px dotted var(--rust-deep); }
+  .track a:hover, .track a:focus-visible { color: var(--ink); border-bottom-color: var(--ink); }
 
   .tally { flex: none; font-weight: 700; font-size: 0.9rem; letter-spacing: 0.05em; color: var(--swamp); }
   .tally.max { color: var(--rust); }
+  body[data-mode="tabs"] .tally { display: none; }
+
+  .gp { flex: none; font-weight: 700; font-size: 0.75rem; letter-spacing: 0.1em; color: var(--rust); text-transform: uppercase; }
+  body[data-mode="live"] .gp { display: none; }
 
   section.others { margin-top: 3rem; }
 
-  .others h2, .gigs h2 {
+  .others h2 {
     font-family: "Alfa Slab One", serif;
     font-size: 1.5rem;
     color: var(--rust);
@@ -199,6 +244,9 @@
   }
 
   .others li small { color: var(--ink-dim); font-weight: 400; margin-left: 0.4rem; }
+  .others li a { color: var(--rust); text-decoration: none; border-bottom: 1px dotted var(--rust-deep); }
+  .others li a:hover, .others li a:focus-visible { color: var(--ink); border-bottom-color: var(--ink); }
+  body[data-mode="tabs"] .others { display: none; }
 
   footer {
     margin-top: 3.5rem;
@@ -220,11 +268,15 @@
   }
 </style>
 </head>
-<body>
+<body data-mode="live">
 <div class="wrap">
   <header>
     <h1>PRIMUS <span class="sucks">SUCKS</span></h1>
-    <p class="strap">Every album track &middot; lit up when I've heard it live</p>
+    <p class="strap" id="strap">Every album track &middot; lit up when I've heard it live</p>
+    <div class="mode-toggle" role="group" aria-label="View mode">
+      <button type="button" class="live-btn" id="btn-live" aria-pressed="true">Seen live</button>
+      <button type="button" class="tabs-btn" id="btn-tabs" aria-pressed="false">Guitar Pro tabs</button>
+    </div>
     <div class="stats" id="stats"></div>
   </header>
 
@@ -236,7 +288,7 @@
   </section>
 
   <footer>
-    <p>Tracklists verified against Wikipedia.</p>
+    <p>Tracklists verified against Wikipedia. Tabs from <a href="https://www.ultimate-guitar.com/artist/primus_648?filter=guitar_pro">Ultimate Guitar</a>.</p>
   </footer>
 </div>
 
@@ -441,71 +493,180 @@
 
   const GIGS = 4;
 
+  // Best-rated Guitar Pro tab per song, from ultimate-guitar.com/artist/primus_648?filter=guitar_pro
+  // keyed by normalised song title (lowercase, parentheticals and punctuation stripped)
+  const GP_BASE = "https://tabs.ultimate-guitar.com/tab/primus/";
+  const GP_TABS = {
+    americanlife: "american-life-guitar-pro-228734",
+    balladofbodacious: "ballad-of-bodacious-guitar-pro-309627",
+    bob: "bob-5-string-arrangement-guitar-pro-309629",
+    bobspartytimelounge: "bobs-party-time-lounge-guitar-pro-309630",
+    coddingtown: "coddingtown-guitar-pro-228738",
+    deanzajig: "de-anza-jig-guitar-pro-228739",
+    deldavistreefarm: "del-davis-tree-farm-guitar-pro-309633",
+    dirtydrowningman: "dirty-drowning-man-guitar-pro-309634",
+    dmv: "dmv-guitar-pro-457417",
+    duchessandtheproverbialmindspread: "duchess-and-the-proverbial-mind-spread-guitar-pro-549382",
+    electricunclesam: "electric-uncle-sam-guitar-pro-228742",
+    eleven: "eleven-guitar-pro-309637",
+    erinonthesideofcaution: "erin-on-the-side-of-caution-guitar-pro-5981933",
+    fishon: "fish-on-guitar-pro-228743",
+    fisticuffs: "fisticuffs-guitar-pro-309639",
+    frizzlefry: "frizzle-fry-guitar-pro-534439",
+    glasssandwich: "glass-sandwich-guitar-pro-309640",
+    goldenboy: "golden-boy-guitar-pro-1148112",
+    goldenticket: "golden-ticket-guitar-pro-1664784",
+    greetthesacredcow: "greet-the-sacred-cow-guitar-pro-792290",
+    groundhogsday: "groundhogs-day-guitar-pro-228744",
+    haroldoftherocks: "harold-of-the-rocks-guitar-pro-309644",
+    hatsoff: "hats-off-guitar-pro-309645",
+    helloskinny: "hello-skinny-constantinople-guitar-pro-309646",
+    herecomethebastards: "here-come-the-bastards-guitar-pro-228745",
+    isitluck: "is-it-luck-guitar-pro-309649",
+    jerrywasaracecardriver: "jerry-was-a-race-car-driver-guitar-pro-1099405",
+    jillysonsmack: "jillys-on-smack-guitar-pro-6575150",
+    johnthefisherman: "john-the-fisherman-guitar-pro-983902",
+    kalamazoo: "kalamazoo-guitar-pro-1513528",
+    lacquerhead: "lacquer-head-guitar-pro-1085965",
+    leevancleef: "lee-van-cleef-guitar-pro-1146089",
+    littlelordfentanyl: "little-lord-fentanyl-guitar-pro-5934749",
+    mamadidntraisenofool: "mama-didnt-raise-no-fool-guitar-pro-309656",
+    marytheicecube: "mary-the-ice-cube-guitar-pro-309657",
+    mrknowitall: "mr-knowitall-guitar-pro-760078",
+    mrkrinkle: "mr-krinkle-guitar-pro-309661",
+    mrsblaileen: "mrs-blaileen-guitar-pro-228751",
+    mynameismud: "my-name-is-mud-guitar-pro-842018",
+    naturaljoe: "natural-joe-guitar-pro-309663",
+    natureboy: "nature-boy-guitar-pro-228753",
+    overtheelectricgrapevine: "over-the-electric-grapevine-guitar-pro-640158",
+    overthefalls: "over-the-falls-guitar-pro-1026985",
+    pilcherssquad: "pilchers-squad-guitar-pro-309666",
+    powermad: "power-mad-guitar-pro-228756",
+    professornutbuttershouseoftreats: "professor-nutbutters-house-of-treats-guitar-pro-1143373",
+    puddintaine: "puddin-taine-guitar-pro-309669",
+    puddingtime: "pudding-time-guitar-pro-228757",
+    sathingtonwaltz: "sathington-waltz-guitar-pro-309671",
+    seasofcheese: "seas-of-cheese-guitar-pro-228758",
+    sgtbaker: "sgt-baker-guitar-pro-457952",
+    shakehandswithbeef: "shake-hands-with-beef-guitar-pro-1467738",
+    southboundpachyderm: "southbound-pachyderm-guitar-pro-228759",
+    spacefarm: "space-farm-guitar-pro-309679",
+    spegettiwestern: "spegetti-western-guitar-pro-309680",
+    theairisgettingslippery: "the-air-is-getting-slippery-guitar-pro-309681",
+    theantipop: "the-antipop-guitar-pro-228736",
+    thelastsuperpowerakarapscallion: "the-last-superpower-aka-rapscallion-guitar-pro-309684",
+    theolgrizz: "the-ol-grizz-guitar-pro-6561221",
+    thereturnofsathingtonwilloughby: "the-return-of-sathington-willoughby-guitar-pro-309685",
+    thescheme: "the-scheme-guitar-pro-5981972",
+    theseven: "the-seven-guitar-pro-2138117",
+    thetoysgowindingdown: "the-toys-go-winding-down-guitar-pro-2072113",
+    thosedamnedbluecollartweekers: "those-damned-blue-collar-tweekers-guitar-pro-228764",
+    todefythelawsoftradition: "to-defy-the-laws-of-tradition-guitar-pro-228770",
+    tommythecat: "tommy-the-cat-guitar-pro-1036105",
+    toomanypuppies: "too-many-puppies-guitar-pro-845765",
+    tragedysacomin: "tragedys-a-comin-guitar-pro-4411142",
+    welcometothisworld: "welcome-to-this-world-guitar-pro-309693",
+    wynonasbigbrownbeaver: "wynonas-big-brown-beaver-guitar-pro-464848",
+    youcantkillmichaelmalloy: "you-cant-kill-michael-malloy-guitar-pro-3330953",
+  };
+
+  const norm = (s) => s.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]/g, "");
+  const gpUrl = (title) => GP_TABS[norm(title)] ? GP_BASE + GP_TABS[norm(title)] : null;
+
   const wikiImg = (f) => `https://en.wikipedia.org/wiki/Special:FilePath/${f}?width=200`;
   const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
   const albumsEl = document.getElementById("albums");
-
-  let heardTracks = 0, totalTracks = 0;
-
-  ALBUMS.forEach((album) => {
-    const heard = album.tracks.filter(([, n]) => n > 0).length;
-    heardTracks += heard;
-    totalTracks += album.tracks.length;
-
-    const card = document.createElement("article");
-    card.className = "album" + (album.full ? " full" : "");
-
-    const initials = album.title.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
-    const coverHtml = album.img
-      ? `<img class="cover" src="${wikiImg(album.img)}" alt="${esc(album.title)} cover"
-           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-         <div class="cover-fallback" aria-hidden="true">${esc(initials)}</div>`
-      : `<div class="cover-fallback" style="display:flex" aria-hidden="true">${esc(initials)}</div>`;
-
-    card.innerHTML = `
-      ${album.full ? '<div class="ribbon">Heard in full</div>' : ""}
-      <div class="album-head">
-        ${coverHtml}
-        <div>
-          <h2 class="album-title">${esc(album.title)}</h2>
-          <div class="album-year">${album.year}</div>
-        </div>
-      </div>
-      <div class="meter">
-        <div class="meter-label"><span>Heard live</span><span class="n">${heard} / ${album.tracks.length}</span></div>
-        <div class="meter-bar"><div class="meter-fill" style="width:${(heard / album.tracks.length) * 100}%"></div></div>
-      </div>
-      <ol class="tracks">
-        ${album.tracks.map(([t, n], i) => `
-          <li class="track${n > 0 ? " heard" : ""}">
-            <span class="no">${i + 1}</span>
-            <span class="t">${esc(t)}</span>
-            ${n > 0 ? `<span class="tally${n >= 4 ? " max" : ""}" title="heard ${n} time${n > 1 ? "s" : ""}">&times;${n}</span>` : ""}
-          </li>`).join("")}
-      </ol>`;
-
-    albumsEl.appendChild(card);
-  });
-
+  const statsEl = document.getElementById("stats");
   const othersEl = document.getElementById("others");
+  const strapEl = document.getElementById("strap");
+
+  function render(mode) {
+    document.body.dataset.mode = mode;
+    document.getElementById("btn-live").setAttribute("aria-pressed", String(mode === "live"));
+    document.getElementById("btn-tabs").setAttribute("aria-pressed", String(mode === "tabs"));
+    strapEl.innerHTML = mode === "live"
+      ? "Every album track &middot; lit up when I've heard it live"
+      : "Every album track &middot; lit up when Ultimate Guitar has a Guitar Pro tab";
+
+    albumsEl.innerHTML = "";
+    let onTracks = 0, totalTracks = 0;
+
+    ALBUMS.forEach((album) => {
+      const rows = album.tracks.map(([t, n]) => {
+        const url = gpUrl(t);
+        const on = mode === "live" ? n > 0 : Boolean(url);
+        return { t, n, url, on };
+      });
+      const onCount = rows.filter((r) => r.on).length;
+      onTracks += onCount;
+      totalTracks += rows.length;
+
+      const card = document.createElement("article");
+      card.className = "album" + (album.full ? " full" : "");
+
+      const initials = album.title.split(/\s+/).map((w) => w[0]).slice(0, 2).join("");
+      const coverHtml = album.img
+        ? `<img class="cover" src="${wikiImg(album.img)}" alt="${esc(album.title)} cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+           <div class="cover-fallback" aria-hidden="true">${esc(initials)}</div>`
+        : `<div class="cover-fallback" style="display:flex" aria-hidden="true">${esc(initials)}</div>`;
+
+      card.innerHTML = `
+        ${album.full ? '<div class="ribbon">Heard in full</div>' : ""}
+        <div class="album-head">
+          ${coverHtml}
+          <div>
+            <h2 class="album-title">${esc(album.title)}</h2>
+            <div class="album-year">${album.year}</div>
+          </div>
+        </div>
+        <div class="meter">
+          <div class="meter-label"><span>${mode === "live" ? "Heard live" : "Pro tabs"}</span><span class="n">${onCount} / ${rows.length}</span></div>
+          <div class="meter-bar"><div class="meter-fill" style="width:${(onCount / rows.length) * 100}%"></div></div>
+        </div>
+        <ol class="tracks">
+          ${rows.map((r, i) => {
+            const name = mode === "tabs" && r.url
+              ? `<a href="${r.url}" target="_blank" rel="noopener">${esc(r.t)}</a>`
+              : esc(r.t);
+            const badge = mode === "live"
+              ? (r.n > 0 ? `<span class="tally${r.n >= 4 ? " max" : ""}" title="heard ${r.n} time${r.n > 1 ? "s" : ""}">&times;${r.n}</span>` : "")
+              : (r.url ? '<span class="gp">GP</span>' : "");
+            return `
+              <li class="track${r.on ? " on" : ""}">
+                <span class="no">${i + 1}</span>
+                <span class="t">${name}</span>
+                ${badge}
+              </li>`;
+          }).join("")}
+        </ol>`;
+
+      albumsEl.appendChild(card);
+    });
+
+    statsEl.innerHTML = "";
+    const stats = mode === "live"
+      ? [[GIGS, "gigs"], [onTracks, `of ${totalTracks} album tracks heard`], [OTHERS.length, "covers & jams"]]
+      : [[onTracks, `of ${totalTracks} album tracks with a Guitar Pro tab`]];
+    stats.forEach(([n, label]) => {
+      const div = document.createElement("div");
+      div.className = "stat";
+      div.innerHTML = `<b>${n}</b>${label}`;
+      statsEl.appendChild(div);
+    });
+  }
+
   OTHERS.forEach(([t, src, n]) => {
     const li = document.createElement("li");
     li.innerHTML = `${esc(t)}<small>${esc(src)}${n > 1 ? ` &middot; &times;${n}` : ""}</small>`;
     othersEl.appendChild(li);
   });
 
-  const statsEl = document.getElementById("stats");
-  [
-    [GIGS, "gigs"],
-    [heardTracks, `of ${totalTracks} album tracks heard`],
-    [OTHERS.length, "covers & jams"],
-  ].forEach(([n, label]) => {
-    const div = document.createElement("div");
-    div.className = "stat";
-    div.innerHTML = `<b>${n}</b>${label}`;
-    statsEl.appendChild(div);
-  });
+  document.getElementById("btn-live").addEventListener("click", () => { location.hash = ""; render("live"); });
+  document.getElementById("btn-tabs").addEventListener("click", () => { location.hash = "tabs"; render("tabs"); });
+
+  render(location.hash === "#tabs" ? "tabs" : "live");
 </script>
 </body>
 </html>
